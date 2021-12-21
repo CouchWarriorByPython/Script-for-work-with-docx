@@ -55,9 +55,9 @@ def check():
 def writer(list_fl, list_st, ct):
     while True:
         try:
-            print('Введите название нового файла(он должен быть пустым)')
-            new_file = input('> ')
-            doc = Document(f'{new_file}.docx')
+            doc = Document('1.docx')
+            par = [par._element.getparent().remove(par._element) for par in doc.paragraphs]
+            table = [tab._element.getparent().remove(tab._element) for tab in doc.tables]
 
             print('Введите шапку')
             space = input('> ')
@@ -79,7 +79,7 @@ def writer(list_fl, list_st, ct):
                 doc.add_paragraph(par_st)
 
             doc.add_paragraph(f'{list_st[-1]}.'.replace(';', ''))
-            doc.save(f'{new_file}.docx')
+            doc.save('1.docx')
             break
         except Exception as ex:
             print('Некорректный ввод, проверьте название вашего файла\n', ex, sep='')
