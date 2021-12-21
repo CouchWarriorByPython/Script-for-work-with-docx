@@ -56,7 +56,7 @@ def writer(list_fl, list_st, ct):
     while True:
         try:
             doc = Document('1.docx')
-            par = [par._element.getparent().remove(par._element) for par in doc.paragraphs]
+            paragraph = [par._element.getparent().remove(par._element) for par in doc.paragraphs]
             table = [tab._element.getparent().remove(tab._element) for tab in doc.tables]
 
             print('Введите шапку')
