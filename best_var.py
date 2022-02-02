@@ -1,9 +1,13 @@
+import re
+
 from docx import Document
 from datetime import datetime, timedelta
 
 
 def check_work_shift():
-    enter = input('Укажите смену, дневная/ночна(д/н): ')
+    """Функция для определения текущей смены работника"""
+    print('Укажите смену, дневная/ночна(д/н):')
+    enter = input('> ')
     try:
         if enter.lower() == 'дневная' or enter.lower() == 'д':
             data = datetime.today()
@@ -17,31 +21,42 @@ def check_work_shift():
 
 
 def func(table):
+    """Функция для работы с основной таблицей файла"""
     list_full = []
     list_short = []
+    list_end_first = []
+    list_end_last = []
     count = 0
     for row in table.rows[2:]:
         count += 1
         string = ''
         for cell in row.cells[1:3]:
-            i = cell.text.rstrip('\n ').strip(' ')
-            string = f"{string + i + ', '}"
-        string = string.rstrip(', ')
+            i = cell.text.rstrip('\n ')
+            string = f"{string + i + ', '}".rstrip(', ')
         new_line = f"-\t{string[0].lower() + string[1:]}"
         list_full.append(new_line)
 
     for row in table.rows[2:]:
-        string = ''
-        for cell in row.cells[1:2]:
-            i = cell.text.rstrip('\n ').strip(' ')
-            string = f"{i};"
-        new_line = f"-\t{string[0].lower() + string[1:]}"
-        list_short.append(new_line)
+        cell = row.cells[1].text.rstrip('\n')
+        new_string = f"-\t{cell[0].lower() + cell[1:]}"
+        list_short.append(new_string)
 
-    writer(list_full, list_short, count)
+    for row in table.rows[2:]:
+        list_end_first.append(row.cells[5].text)
+
+    for row in table.rows[2:]:
+        context = row.cells[6].text
+        if context != '':
+            second_part = context.split('\n')
+            list_end_last.append(second_part[1])
+        else:
+            list_end_last.append(context)
+
+    writer(list_full, list_short, list_end_first, list_end_last, count)
 
 
 def check():
+    """Функция для получени файла и запуска скрипта"""
     while True:
         try:
             doc = Document('1.docx').tables[0]
@@ -52,14 +67,22 @@ def check():
             print('Некорректный ввод, проверьте путь к вашему файлу\n', ex, sep='')
 
 
-def writer(list_fl, list_st, ct):
+def has_cyrillic(text):
+    return bool(re.search('[а-яА-Я]', text))
+
+
+def writer(list_fl, list_st, list_end_ft, list_end_lt, ct):
+    """Функция для записи данных в файл"""
     while True:
         try:
             doc = Document('1.docx')
-            paragraph = [par._element.getparent().remove(par._element) for par in doc.paragraphs]
-            table = [tab._element.getparent().remove(tab._element) for tab in doc.tables]
+            """
+            Два генератора списков для удаления всех данных из файла и записи в чистый документ
+            """
+            [par._element.getparent().remove(par._element) for par in doc.paragraphs]
+            [tab._element.getparent().remove(tab._element) for tab in doc.tables]
 
-            print('Введите шапку')
+            print('Введите шапку:')
             space = input('> ')
 
             print('Введите номер предписания:')
@@ -68,17 +91,25 @@ def writer(list_fl, list_st, ct):
             date_time = check_work_shift()
             doc.add_paragraph(space).runs[0].bold = True
             doc.add_paragraph(f'Выявлено {ct} нарушений\n')
-            for par_fl in list_fl:
-                par_fl = f'\n{par_fl}\n'
-                doc.add_paragraph(par_fl)
+            for par_fl in range(len(list_fl)):
+                if has_cyrillic(list_end_ft[par_fl]):
+                    content = f'\n{list_fl[par_fl]}'
+                    doc.add_paragraph(content).add_run(f'. {list_end_ft[par_fl]}\n').bold = True
+                else:
+                    content = f'\n{list_fl[par_fl]}\n'
+                    doc.add_paragraph(content)
 
-            doc.add_paragraph(f'Выдано предписание № {number_ceh}-1 от {date_time}\n').runs[0].bold = True
+            doc.add_paragraph(f'Выдано предписание № {number_ceh}-1 от '
+                              f'{date_time}\n').runs[0].bold = True
 
-            for par_st in list_st[:-1]:
-                par_st = f'{par_st}'
-                doc.add_paragraph(par_st)
+            for par_st in range(len(list_st[:-1])):
+                if list_end_lt[par_st] == '':
+                    par_st = f'{list_st[par_st]};'
+                    doc.add_paragraph(par_st)
+                else:
+                    doc.add_paragraph(list_st[par_st]).add_run(f'. {list_end_lt[par_st]};')
 
-            doc.add_paragraph(f'{list_st[-1]}.'.replace(';', ''))
+            doc.add_paragraph(list_st[-1]).add_run(f'. {list_end_lt[-1]}.')
             doc.save('1.docx')
             break
         except Exception as ex:
