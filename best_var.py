@@ -32,8 +32,8 @@ def func(table):
         string = ''
         for cell in row.cells[1:3]:
             i = cell.text.rstrip('\n ')
-            string = f"{string + i + ', '}".rstrip(', ')
-        new_line = f"-\t{string[0].lower() + string[1:]}"
+            string = f"{string + i + ', '}"
+        new_line = f"-\t{string[0].lower() + string[1:]}".rstrip(', ')
         list_full.append(new_line)
 
     for row in table.rows[2:]:
@@ -71,7 +71,7 @@ def has_cyrillic(text):
     return bool(re.search('[а-яА-Я]', text))
 
 
-def writer(list_fl, list_st, list_end_ft, list_end_lt, ct):
+def writer(list_fl, list_st, list_end_ft, list_end_st, ct):
     """Функция для записи данных в файл"""
     while True:
         try:
@@ -91,7 +91,8 @@ def writer(list_fl, list_st, list_end_ft, list_end_lt, ct):
             date_time = check_work_shift()
             doc.add_paragraph(space).runs[0].bold = True
             doc.add_paragraph(f'Выявлено {ct} нарушений\n')
-            for par_fl in range(len(list_fl)):
+
+            for par_fl in range(len(list_fl)):  # Цикл для формирования первой части документа
                 if has_cyrillic(list_end_ft[par_fl]):
                     content = f'\n{list_fl[par_fl]}'
                     doc.add_paragraph(content).add_run(f'. {list_end_ft[par_fl]}\n').bold = True
@@ -102,16 +103,42 @@ def writer(list_fl, list_st, list_end_ft, list_end_lt, ct):
             doc.add_paragraph(f'Выдано предписание № {number_ceh}-1 от '
                               f'{date_time}\n').runs[0].bold = True
 
-            for par_st in range(len(list_st[:-1])):
-                if list_end_lt[par_st] == '':
-                    par_st = f'{list_st[par_st]};'
-                    doc.add_paragraph(par_st)
-                else:
-                    doc.add_paragraph(list_st[par_st]).add_run(f'. {list_end_lt[par_st]};')
+            for par_st in range(len(list_st[:-1])):  # Цикл для формирования второй части документа
+                if has_cyrillic(list_end_ft[par_st]):
+                    content = list_st[par_st]
+                    if list_end_st[par_st] != '':
+                        six_column = doc.add_paragraph(content).add_run(f'. {list_end_ft[par_st]}')
+                        six_column.add_run(f'. {list_end_st[par_st]};')
 
-            doc.add_paragraph(list_st[-1]).add_run(f'. {list_end_lt[-1]}.')
+                    else:
+                        doc.add_paragraph(content).add_run(f'. {list_end_ft[par_st]};')
+
+                else:
+                    if list_end_st[par_st] != '':
+                        content = list_st[par_st]
+                        doc.add_paragraph(content).add_run(f'. {list_end_st[par_st]};')
+                    else:
+                        content = f'{list_st[par_st]};'
+                        doc.add_paragraph(content)
+
+            if has_cyrillic(list_end_ft[-1]):
+                content = list_st[-1]
+                if list_end_st[-1] != '':
+                    six_column = doc.add_paragraph(content).add_run(f'. {list_end_ft[-1]}')
+                    six_column.add_run(f'. {list_end_st[-1]}.')
+                else:
+                    doc.add_paragraph(content).add_run(f'. {list_end_ft[-1]}.')
+            else:
+                if list_end_st[-1] != '':
+                    content = list_st[-1]
+                    doc.add_paragraph(content).add_run(f'. {list_end_st[-1]}.')
+                else:
+                    content = f"{list_st[-1]}."
+                    doc.add_paragraph(content)
+
             doc.save('1.docx')
             break
+
         except Exception as ex:
             print('Некорректный ввод, проверьте название вашего файла\n', ex, sep='')
 
