@@ -94,8 +94,8 @@ def writer(list_fl, list_st, list_end_ft, list_end_st, ct):
 
             for par_fl in range(len(list_fl)):  # Цикл для формирования первой части документа
                 if has_cyrillic(list_end_ft[par_fl]):
-                    content = f'\n{list_fl[par_fl]}'
-                    doc.add_paragraph(content).add_run(f'. {list_end_ft[par_fl]}\n').bold = True
+                    content = f'\n{list_fl[par_fl]}. '
+                    doc.add_paragraph(content).add_run(f'{list_end_ft[par_fl]}\n').bold = True
                 else:
                     content = f'\n{list_fl[par_fl]}\n'
                     doc.add_paragraph(content)
