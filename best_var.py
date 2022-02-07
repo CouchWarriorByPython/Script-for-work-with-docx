@@ -82,14 +82,14 @@ def writer(list_fl, list_st, list_end_ft, list_end_st, ct):
             [par._element.getparent().remove(par._element) for par in doc.paragraphs]
             [tab._element.getparent().remove(tab._element) for tab in doc.tables]
 
-            print('Введите шапку:')
-            space = input('> ')
+            # print('Введите шапку:')
+            # space = input('> ')
 
             print('Введите номер предписания:')
             number_ceh = input('> ')
 
             date_time = check_work_shift()
-            doc.add_paragraph(space).runs[0].bold = True
+            # doc.add_paragraph(space).runs[0].bold = True
             doc.add_paragraph(f'Выявлено {ct} нарушений\n')
 
             for par_fl in range(len(list_fl)):  # Цикл для формирования первой части документа
